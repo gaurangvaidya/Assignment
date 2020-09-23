@@ -1,0 +1,151 @@
+//TRIGGER ON ACCOUNT
+trigger AfterAccountCreated on Account (after insert,before insert) {
+    
+    
+    
+    	if(Trigger.isBefore)
+        {
+            SolutionThreeClass.TriggerOnAccount(trigger.new,TRUE);
+        }
+    	else
+        {
+            SolutionThreeClass.TriggerOnAccount(trigger.new,FALSE);
+        }
+    
+         
+    
+
+}
+
+//TRIGGER ON CONTACT
+trigger AfterContactCreated on Contact (after insert,after delete,after update) {
+    
+    if(Trigger.isInsert)
+    {
+      SolutionThreeClass.TriggerOnContacts(trigger.new,'insert');
+    }
+    
+    else if(Trigger.isDelete)
+    {
+       
+        SolutionThreeClass.TriggerOnContacts(trigger.old,'delete');
+        
+    }
+    
+    else
+    {
+        SolutionThreeClass.TriggerOnContacts(trigger.new,'update');
+        
+    }
+    
+    
+    
+
+}
+
+//CLASS FOR ALL TRIGGERS
+
+public class SolutionThreeClass {
+    
+    
+    public static void TriggerOnAccount(List<Account> accounts  ,Boolean bCheckTriggerBefore)
+    {
+        	 List<Contact> contactsToBeAdded = new List<Contact>();
+         
+         for(Account acc : accounts)
+            {
+                if(bCheckTriggerBefore)
+                {
+                   acc.Only_Default__c=True;
+                }
+                else
+                {
+                    Contact con = new Contact();
+                    con.AccountId = acc.Id;
+                    con.FirstName='Info';
+                    con.LastName='Default';
+                    con.Email='info@websitedomain.tld';
+                    contactsToBeAdded.add(con); 
+                }
+             
+            }
+    
+    		if(!bCheckTriggerBefore){
+       			 insert contactsToBeAdded;
+    		}		
+        
+        
+    }
+    
+    public static void TriggerOnContacts(List<Contact> contacts,String typeOfTrigger)
+    {
+        if(typeOfTrigger=='insert')
+        {
+                   List<Account> accountsToBeUpdated = new List<Account>();
+        for(Contact con : contacts)
+        {
+            Account acc = [SELECT Only_Default__c FROM Account WHERE ID=:con.AccountId];
+            Integer countOfContacts = [SELECT count() FROM Contact WHERE AccountId=:con.AccountId];
+            
+            if(countOfContacts>1)
+            {
+                acc.Only_Default__c=False;
+                accountsToBeUpdated.add(acc);
+            }
+            
+        }
+        update accountsToBeUpdated;
+ 
+        }
+        else if(typeOfTrigger=='delete')
+        {
+             List<Account> accountsToBeUpdated = new List<Account>();
+        for(Contact con : contacts)
+        {
+            Account acc = [SELECT Only_Default__c FROM Account WHERE ID=:con.AccountId];
+            Integer countOfContacts = [SELECT count() FROM Contact WHERE AccountId=:con.AccountId];
+            
+            if(countOfContacts==1)
+            {
+                acc.Only_Default__c=True;
+                accountsToBeUpdated.add(acc);
+            }
+            else
+            {
+                acc.Only_Default__c=False;
+                accountsToBeUpdated.add(acc);
+            }
+            
+        }
+        update accountsToBeUpdated;
+        }
+        else if(typeOfTrigger=='update')
+        {
+            List<Account> accountsToBeUpdated = new List<Account>();
+       	for(Contact con : contacts)
+        {
+            if(con.AccountId!=null)
+            {
+                Account acc = [SELECT Only_Default__c FROM Account WHERE id=:con.AccountId];
+                Integer countOfContacts = [SELECT count() FROM Contact WHERE AccountId=:con.AccountId];
+                if(countOfContacts==1)
+                {
+                 	acc.Only_Default__c=TRUE;
+                    accountsToBeUpdated.add(acc);
+                    
+                }
+                else
+                {
+                    acc.Only_Default__c=FALSE;
+                    accountsToBeUpdated.add(acc);
+                    
+                }
+            }
+        }
+        
+        update accountsToBeUpdated;
+        }
+        
+    }
+
+}

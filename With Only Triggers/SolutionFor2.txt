@@ -1,0 +1,67 @@
+//Trigger ON Account
+trigger AccountWebsite on Account (after insert,after update) {
+    
+    List<Contact> contactsToBeUpdated = new List<Contact>();
+        
+    for(Account acc:trigger.new)
+    {
+        List<Contact> contacts = new List<Contact>();
+        if(acc.Website!=null)
+        {
+            
+         	contacts = [SELECT Profile__c,FirstName,LastName FROM Contact WHERE AccountId=:acc.ID];
+                if(contacts!=null)
+                   {
+                       for(Contact c : contacts)
+                        {
+                                c.Profile__c = acc.Website+'/'+c.FirstName.substring(0,1)+c.LastName;
+                        
+                        }
+                        contactsToBeUpdated.addAll(contacts);
+                   }
+            
+            
+       	 }
+        else if(acc.Website==null)
+        {
+            	
+            	contacts = [SELECT Profile__c,FirstName,LastName FROM Contact WHERE AccountId=:acc.ID];
+                if(contacts!=null)
+                   {
+                       for(Contact c : contacts)
+                        {
+                                c.Profile__c = '';
+                        
+                        }
+                        contactsToBeUpdated.addAll(contacts);
+                   }
+        }
+        
+       
+
+        
+    }
+    
+   	update contactsToBeUpdated;
+
+}
+
+
+//Trigger ON Contact
+
+trigger AfterContact on Contact (before insert) {
+    
+    
+    for(Contact cont:trigger.new)
+    {
+        Account acc = [SELECT Website FROM Account WHERE ID=:cont.AccountId];
+        
+        if(acc.Website!='')
+        {
+            cont.Profile__c=acc.Website+'/'+cont.FirstName.substring(0,1)+cont.LastName;
+            
+        }
+        
+    }
+
+}

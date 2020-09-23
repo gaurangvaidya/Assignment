@@ -1,0 +1,83 @@
+//TRIGGER ON ACCOUNT
+
+trigger AccountWebsite on Account (after insert,after update) {
+    
+	AccountWebsiteClass.TriggerOnAccount(trigger.new);
+    
+
+}
+
+
+//TRIGGER ON CONTACT
+
+trigger AfterContact on Contact (before insert) {
+
+    AccountWebsiteClass.TriggerOnContact(trigger.new);
+
+}
+
+//CLASS FOR BOTH TRIGGERS
+public class AccountWebsiteClass {
+    
+    public static void TriggerOnAccount(List<Account> accounts)
+    {
+            List<Contact> contactsToBeUpdated = new List<Contact>();
+        
+    for(Account acc:accounts)
+    {
+        List<Contact> contacts = new List<Contact>();
+        if(acc.Website!=null)
+        {
+            
+         	contacts = [SELECT Profile__c,FirstName,LastName FROM Contact WHERE AccountId=:acc.ID];
+                if(contacts!=null)
+                   {
+                       for(Contact c : contacts)
+                        {
+                                c.Profile__c = acc.Website+'/'+c.FirstName.substring(0,1)+c.LastName;
+                        
+                        }
+                        contactsToBeUpdated.addAll(contacts);
+                   }
+            
+            
+       	 }
+        else if(acc.Website==null)
+        {
+            	System.debug('Empty Called');
+            	contacts = [SELECT Profile__c,FirstName,LastName FROM Contact WHERE AccountId=:acc.ID];
+                if(contacts!=null)
+                   {
+                       for(Contact c : contacts)
+                        {
+                                c.Profile__c = '';
+                        
+                        }
+                        contactsToBeUpdated.addAll(contacts);
+                   }
+        }
+        
+       
+
+        
+    }
+    
+   	update contactsToBeUpdated;
+    }
+    
+    public static void TriggerOnContact(List<Contact> contacts)
+    {
+                for(Contact cont:contacts)
+            	{
+                Account acc = [SELECT Website FROM Account WHERE ID=:cont.AccountId];
+                
+                if(acc.Website!='')
+                {
+                    cont.Profile__c=acc.Website+'/'+cont.FirstName.substring(0,1)+cont.LastName;
+                    
+                }
+                
+            }
+    }
+
+}

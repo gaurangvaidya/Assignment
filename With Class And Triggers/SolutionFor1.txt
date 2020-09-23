@@ -1,0 +1,41 @@
+//TRIGGER ON Opportunity
+trigger IsGold on Opportunity (after insert,after update) {
+    
+
+    IsGoldClass.setIsGold(trigger.new);
+
+}
+
+
+//CLASS FOR TRIGGER
+
+public class IsGoldClass {
+    
+    
+    public static void setIsGold(List<Opportunity> opportunities)
+    {
+            Set<Account> accsToBeUpdated = new Set<Account>(); 
+    for(Opportunity opp : opportunities)
+    {
+       if(opp.Amount>20000)
+       {
+          Account acc = [SELECT is_gold__c FROM Account WHERE ID=:opp.AccountId];
+         accsToBeUpdated.add(acc);
+          
+       }
+
+    }
+    
+    for(Account acc:accsToBeUpdated)
+    {
+        
+        acc.is_gold__c=True;
+        
+        
+    }
+    List<Account> listOfAccountsToBeUpdated = new List<Account>();
+    listOfAccountsToBeUpdated.addAll(accsToBeUpdated);
+    update listOfAccountsToBeUpdated;
+    }
+
+}
